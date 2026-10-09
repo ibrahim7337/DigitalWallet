@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="My Custom PHPMD Ruleset"
+         xmlns="http://sf.net"
+         xmlns:xsi="http://w3.org"
+         xsi:schemaLocation="http://sf.net http://sf.net"
+         xsi:noNamespaceSchemaLocation="http://sf.net">
+         
+    <description> My PHPMD rulesets </description>
+    
+    <rule ref="rulesets/codesize.xml"/>
+    <rule ref="rulesets/design.xml"/>
+    <rule ref="rulesets/controversial.xml" />
+    <rule ref="rulesets/unusedcode.xml" />
+    <rule ref="rulesets/cleancode.xml/IfStatementAssignment"/>
+
+    <rule ref="rulesets/naming.xml">
+        <exclude name="LongVariable" />
+    </rule>
+
+    <rule ref="rulesets/naming.xml/LongVariable">
+        <properties>
+            <property name="maximum" value="30" />
+        </properties>
+    </rule>
+</ruleset>
