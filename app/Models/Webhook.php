@@ -12,6 +12,8 @@ class Webhook extends Model
         'reference',
         'note',
         'internal_reference',
+        'status',
+        'processed_at',
     ];
 
     protected $casts = [
