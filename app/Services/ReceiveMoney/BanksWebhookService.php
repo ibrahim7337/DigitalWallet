@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\ReceiveMoney;
 
+use App\Jobs\ProcessWebhook;
 use App\Models\User;
 use App\Models\Webhook;
-use App\Notifications\WebhookNotification;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 abstract class BanksWebhookService
 {
@@ -34,23 +33,17 @@ abstract class BanksWebhookService
         $webhooks = $validated['webhooks'];
 
         try {
-            DB::beginTransaction();
-
             // Temporary dummy receiver for development.
             $receiver = User::query()->findOrFail(1);
-
-            $receiver->notify(new WebhookNotification($webhooks));
 
             foreach ($webhooks as $webhook) {
                 $parsedWebhook = $this->parseTransaction($webhook);
 
-                $this->store($parsedWebhook);
+                $event = Webhook::firstOrCreate($parsedWebhook);
+
+                ProcessWebhook::dispatch($receiver, $event);
             }
-
-            DB::commit();
         } catch (Exception $e) {
-            DB::rollBack();
-
             return response()->json(['message' => 'Webhook processed failed.'], 200);
         }
 
@@ -65,15 +58,5 @@ abstract class BanksWebhookService
         $timestamp = strtotime($date);
 
         return date('Y-m-d', (int) $timestamp);
-    }
-
-    /**
-     * Store Transaction
-     *
-     * @param  array<mixed>  $webhook
-     */
-    private function store(array $webhook): void
-    {
-        Webhook::create($webhook);
     }
 }
