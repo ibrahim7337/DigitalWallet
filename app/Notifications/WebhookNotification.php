@@ -11,11 +11,9 @@ class WebhookNotification extends Notification
 
     /**
      * Create a new notification instance.
-     *
-     * @param  array<string>  $webhooks
      */
     public function __construct(
-        public array $webhooks,
+        public string $webhook,
     ) {}
 
     /**
@@ -36,7 +34,7 @@ class WebhookNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         return [
-            'webhooks' => $this->webhooks,
+            'webhook' => $this->webhook,
             'message' => 'Your Webhook had been received.',
         ];
     }
