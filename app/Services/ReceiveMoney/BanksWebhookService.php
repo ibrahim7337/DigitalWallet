@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\ReceiveMoney;
 
+use App\Models\User;
 use App\Models\Webhook;
+use App\Notifications\WebhookNotification;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,6 +35,11 @@ abstract class BanksWebhookService
 
         try {
             DB::beginTransaction();
+
+            // Temporary dummy receiver for development.
+            $receiver = User::query()->findOrFail(1);
+
+            $receiver->notify(new WebhookNotification($webhooks));
 
             foreach ($webhooks as $webhook) {
                 $parsedWebhook = $this->parseTransaction($webhook);
