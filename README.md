@@ -1,58 +1,113 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Digital Wallet
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel API exercise for generating bank payment-request XML and receiving transaction webhooks from Acme Bank and PayTech Bank. Incoming webhooks are persisted and queued for processing. This repository is an integration prototype, not a complete wallet ledger or funds-transfer system.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Git
+- Docker and [DDEV](https://ddev.com/get-started/) (recommended; this repository configures PHP 8.4 and MariaDB)
+- For a native setup instead: PHP 8.4.1 or newer, Composer, and SQLite
+- Apidog, if you want to run the supplied API collection
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Install and run with DDEV
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/ibrahim7337/DigitalWallet.git
+cd DigitalWallet
+ddev start
+cp .env.example .env
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+The DDEV configuration starts PHP 8.4 and MariaDB. Update the database and URL values in `.env` to use DDEV's local database:
 
-## Contributing
+```bash
+APP_URL=https://digital-wallet.ddev.site
+DB_CONNECTION=mariadb
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=db
+DB_USERNAME=db
+DB_PASSWORD=db
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Keep `QUEUE_CONNECTION=database`, which is already set in `.env.example`. Install dependencies, generate an application key, then create and seed the database:
 
-## Code of Conduct
+```bash
+ddev composer install
+ddev artisan key:generate
+ddev artisan migrate --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+The seeder creates a `Test User` (`test@example.com`). The webhook handler currently notifies user ID `1`, so the seeded user on a fresh database is used by the example workflow. To open the application, run `ddev describe`; the API base URL is `https://digital-wallet.ddev.site` with this project's default DDEV name.
 
-## Security Vulnerabilities
+### Native PHP and SQLite alternative
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Use this option if PHP 8.4.1+ and Composer are installed locally. The `.env.example` defaults to SQLite and the database queue:
 
-## License
+```bash
+composer install
+cp .env.example .env
+touch database/database.sqlite
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The native API base URL is `http://127.0.0.1:8000`. For this setup, use `composer` and `php artisan` in place of the `ddev composer` and `ddev artisan` commands below.
+
+## Quality checks
+
+Run the project quality script from the repository root:
+
+```bash
+ddev composer quality
+```
+
+For the native setup, run `composer quality` instead. The script runs Pint in test mode, PHPStan, and the test suite.
+
+## Try the API with Apidog
+
+Import the collection at the repository root, [`Digital Wallet Coding Challenge.apidog.json`](./Digital%20Wallet%20Coding%20Challenge.apidog.json), into Apidog. Set the collection/environment base URL to match your setup, then send the included requests:
+
+| Purpose | Method and path |
+| --- | --- |
+| Generate payment XML | `POST /api/v1/generateXML` |
+| Receive Acme Bank webhook(s) | `POST /api/v1/webhooks/AcmeBank` |
+| Receive PayTech Bank webhook(s) | `POST /api/v1/webhooks/PayTechBank` |
+
+For DDEV, set the base URL to `https://digital-wallet.ddev.site`; for native PHP, use `http://127.0.0.1:8000`.
+
+The webhook endpoints accept JSON with a `webhooks` array of strings. The collection includes sample request bodies. For example, an Acme request looks like:
+
+```json
+{
+  "webhooks": [
+    "156,52//202506159000003//20250617"
+  ]
+}
+```
+
+The XML endpoint accepts the nested `PaymentRequestMessage` JSON object shown in the Apidog collection and returns XML. Optional XML fields are omitted for the special values implemented by the service: `Notes` when absent, `PaymentType` when it is `"99"`, and `ChargeDetails` when it is `"SHA"`.
+
+### Observe webhook processing
+
+In a second terminal, start the database queue worker:
+
+```bash
+ddev artisan queue:work database --sleep=1 --tries=5
+```
+
+For native PHP, run `php artisan queue:work database --sleep=1 --tries=5`. With the worker running, send a webhook request from Apidog. The request handler stores a row in `webhooks` and enqueues a `ProcessWebhook` job in `jobs`. The worker processes the job; completed queue rows are removed from `jobs`.
+
+To inspect the DDEV database, open a database shell with `ddev mysql` and run:
+
+```sql
+SELECT id, date, amount, reference, note, internal_reference, status, processed_at
+FROM webhooks;
+
+SELECT id, queue, attempts
+FROM jobs;
+
+SELECT id, type, notifiable_id, data, created_at
+FROM notifications;
+
