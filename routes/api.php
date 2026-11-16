@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\ReceiveMoney\AcmeBankWebhook;
 use App\Http\Controllers\Api\V1\ReceiveMoney\PayTechBankWebhook;
 use App\Http\Controllers\Api\V1\SendingMoney;
+use App\Http\Controllers\Api\V1\Shape\ShapeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -29,5 +30,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/notifications/send', [
         NotificationController::class,
         'send',
+    ]);
+
+    Route::post('/duplicates/shape', [
+        ShapeController::class,
+        'duplicate',
     ]);
 });
